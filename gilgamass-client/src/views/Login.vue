@@ -39,7 +39,7 @@
           <div class="social-auth-links text-center mt-2 mb-3">
             <p>- OR -</p>
 
-            <!-- <GoogleLogin :params="params" :renderParams="renderParams" :onSuccess="onSuccess"></GoogleLogin> -->
+            <GoogleLogin :params="params" :renderParams="renderParams" :onSuccess="onSuccess"></GoogleLogin>
           </div>
 
           <p class="mb-0">
@@ -56,11 +56,24 @@
 </template>
 
 <script>
+import GoogleLogin from "vue-google-login";
+import axios from "axios";
+
 export default {
   name: "Login",
 
   data() {
     return {
+      params: {
+        client_id: "832674730203-tsf7a88rkd4bgbirs5jkq9ljva861k47.apps.googleusercontent.com",
+      },
+      renderParams: {
+        width: 318,
+        height: 50,
+        longtitle: true,
+        theme: "dark",
+        scope: "profile email",
+      },
       user: {
         email: "",
         password: "",
@@ -68,7 +81,31 @@ export default {
     };
   },
 
+  components: {
+    GoogleLogin,
+  },
+
   methods: {
+    async onSuccess(user) {
+      try {
+        const id_token = user.getAuthResponse().id_token;
+        const resp = await axios({
+          url: `${this.$baseUrl}/user/sign-in-google`,
+          method: "POST",
+          data: {
+            id_token,
+          },
+        });
+        const { access_token, name, id } = resp.data;
+        localStorage.setItem("access_token", access_token);
+        localStorage.setItem("idUser", id);
+        localStorage.setItem("username", name);
+        this.$router.push("/tracking?header=Target%20History&tag=one");
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
     handleSubmitLogin() {
       this.$store
         .dispatch("getUser", this.user)
